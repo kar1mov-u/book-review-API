@@ -37,6 +37,23 @@ class BookDB(BookBase,table=True):
     rating: float=Field(default=0.0)
     reviews: list['ReviewDB']= Relationship(back_populates="book")
     genres: List["GenreDB"] = Relationship(back_populates="books", link_model=BookGenreLink)
+
+
+class GenreBase(SQLModel):
+    name: str
+    id:int
+    class Config:
+        from_attributes=True
+    
+class BookReturn(SQLModel):
+    id: int
+    title: str
+    author: str
+    published: int
+    genres: list[GenreBase]
+    
+    class Config:
+        from_attributes = True
     
     
 class GenreDB(SQLModel,table=True):

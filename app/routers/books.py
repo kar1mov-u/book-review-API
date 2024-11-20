@@ -1,16 +1,27 @@
 from fastapi import APIRouter, HTTPException
 from sqlmodel import select
-from sqlalchemy.future import select
+from typing import List
+# from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
 from ..database import SessionDep
-from ..models.sql_models import BookDB,BookCreate,GenreDB
+from ..models.sql_models import BookDB,BookCreate,GenreDB,BookReturn,GenreBase
 
 router = APIRouter()
 
-@router.get('/books')
+@router.get('/books',response_model=list[BookReturn])
 def get_books(session:SessionDep):
-    books = session.exec(select(BookDB)).all()
-    return books
+    books = session.exec(select(BookDB).options(joinedload(BookDB.genres))).unique().all()
+
+    return_objects = []
+    for book in books:
+            b= BookReturn(id=book.id,
+                          title=book.title,
+                          author=book.author,
+                          published=book.published,
+                          genres=[GenreBase(name=genre.name, id=genre.id) for genre in book.genres] )
+            return_objects.append(b)
+    return return_objects
 
 @router.post('/books/add')
 async def create_book(book_data:BookCreate, session: SessionDep):
@@ -21,7 +32,7 @@ async def create_book(book_data:BookCreate, session: SessionDep):
     
     genre_objects = []
     for genre_name in genres:
-        genre = session.exec(select(GenreDB).where(GenreDB.name==genre_name)).scalars().first()
+        genre = session.exec(select(GenreDB).where(GenreDB.name==genre_name)).first()
         if not genre:
             genre = GenreDB(name=genre_name)
             session.add(genre)
@@ -33,8 +44,10 @@ async def create_book(book_data:BookCreate, session: SessionDep):
         session.commit()
         session.refresh(new_book)
     except IntegrityError:
-        raise HTTPException(detail="The book is already in use")
+        raise HTTPException(status_code=401,detail="The book is already in use")
     return new_book
+
+
         
         
     
