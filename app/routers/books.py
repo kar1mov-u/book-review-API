@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException,Depends
 from sqlmodel import select
 from typing import List
 # from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from ..database import SessionDep
-from ..models.sql_models import BookDB,BookCreate,GenreDB,BookReturn,GenreBase
+from ..models.sql_models import BookDB,BookCreate,GenreDB,BookReturn,GenreBase,ReviewBase, ReviewDB
+from ..auth import get_current_user
 
 router = APIRouter()
 
@@ -49,7 +50,19 @@ async def create_book(book_data:BookCreate, session: SessionDep):
 
 
         
-        
+@router.get('/books/{id}')
+def get_book(id:int,session:SessionDep):
+    book = session.exec(select(BookDB).options(joinedload(BookDB.genres)).where(BookDB.id ==id)).unique().first()
+    if not book:
+        raise HTTPException(status_code=404, detail="There is no such book")
+    return BookReturn(id=book.id,title=book.title,author=book.author, published=book.published, genres=[GenreBase(id=genre.id, name=genre.name) for genre in book.genres])
+
+
+@router.post('/books/comment/{id}')
+def commen_book(id:int, comment:ReviewBase, session: SessionDep,user=Depends(get_current_user)):
+    data = comment.model_dump()
+    comment_db = ReviewDB(**data, book_id=id,user_id=user.id)
+    session.add(comment_db)
+    session.commit()
+    return {"msg":"Success"}
     
-
-

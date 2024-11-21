@@ -67,13 +67,15 @@ class BookCreate(SQLModel):
     genres:List[str]
     
 class ReviewBase(SQLModel):
-    user_id : int
-    positive: bool
-    book_id: int=Field(foreign_key="bookdb.id")
     message: str
     
 class ReviewDB(ReviewBase,table=True):
     id: int| None = Field(default=None, primary_key=True)
+    user_id : int
+    
+    book_id: int=Field(foreign_key="bookdb.id")
+    
     book:Optional[BookDB]=Relationship(back_populates="reviews")
+
 
 
