@@ -1,6 +1,7 @@
 from sqlmodel import SQLModel,Field,Relationship
 from typing import Optional,List
 from pydantic import BaseModel
+from datetime import timezone,datetime
 from sqlalchemy import ForeignKey
 
 class UserBase(SQLModel):
@@ -23,7 +24,7 @@ class UserLogin(SQLModel):
     
     
 class BookBase(SQLModel):
-    title: str
+    title: str = Field(unique=True)
     author: str
     published: int
 
@@ -45,15 +46,7 @@ class GenreBase(SQLModel):
     class Config:
         from_attributes=True
     
-class BookReturn(SQLModel):
-    id: int
-    title: str
-    author: str
-    published: int
-    genres: list[GenreBase]
-    
-    class Config:
-        from_attributes = True
+
     
     
 class GenreDB(SQLModel,table=True):
@@ -72,10 +65,23 @@ class ReviewBase(SQLModel):
 class ReviewDB(ReviewBase,table=True):
     id: int| None = Field(default=None, primary_key=True)
     user_id : int
-    
+    created_at:datetime = Field(default_factory=datetime.utcnow)
     book_id: int=Field(foreign_key="bookdb.id")
     
     book:Optional[BookDB]=Relationship(back_populates="reviews")
 
+class ReviewReturn(ReviewBase):
+    id : int
+    user_id:int
+    created_at:datetime
 
-
+class BookReturn(SQLModel):
+    id: int
+    title: str
+    author: str
+    published: int
+    genres: list[GenreBase]
+    reviews:list[ReviewReturn]
+    
+    class Config:
+        from_attributes = True
