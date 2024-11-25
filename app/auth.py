@@ -48,5 +48,9 @@ def get_current_user(session:SessionDep, token:str=Depends(ouath2_scheme)):
     if not user:
         raise credentials_exception
     return user
-    
+
+def is_admin(user=Depends(get_current_user)):
+    if not user.is_admin:
+        raise HTTPException(status_code=401, detail="You are not admin")
+    return user
     

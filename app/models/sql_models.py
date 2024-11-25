@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel,Field,Relationship
 from typing import Optional,List
 from pydantic import BaseModel
-from datetime import timezone,datetime
+from datetime import datetime
 from sqlalchemy import ForeignKey
 
 class UserBase(SQLModel):
@@ -11,7 +11,7 @@ class UserBase(SQLModel):
     
 class UserDB(UserBase, table=True):
     id: int| None=Field(default=None,primary_key=True)
-    
+    is_admin: bool =Field(default=False)
     
 class UserLogin(SQLModel):
     email: str

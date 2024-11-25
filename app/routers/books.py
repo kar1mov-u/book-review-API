@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from ..database import SessionDep
 from ..models.sql_models import BookDB,BookCreate,GenreDB,BookReturn,GenreBase,ReviewBase, ReviewDB,ReviewReturn
-from ..auth import get_current_user
+from ..auth import get_current_user,is_admin
 
 router = APIRouter()
 
@@ -27,7 +27,8 @@ def get_books(session:SessionDep):
 
 
 @router.post('/books/add')
-async def create_book(book_data:BookCreate, session: SessionDep):
+async def create_book(book_data:BookCreate, session: SessionDep, admin=Depends(is_admin)):
+
     book=book_data.book
     genres = book_data.genres
     print(book)

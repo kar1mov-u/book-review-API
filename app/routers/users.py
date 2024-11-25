@@ -43,3 +43,4 @@ def login(session:SessionDep, user_data:OAuth2PasswordRequestForm=Depends()):
 @router.get('/users/me')
 def get_my_user(user:UserDB=Depends(get_current_user)):
     return user
+
