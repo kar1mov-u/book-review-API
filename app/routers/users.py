@@ -24,6 +24,7 @@ def create_user(user:UserBase, session:SessionDep):
         session.refresh(user_db)
         return user_db
     except IntegrityError:
+        session.rollback()
         raise HTTPException(status_code=400, detail="Email or Username is already registered")
     
 

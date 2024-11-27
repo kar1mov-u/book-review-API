@@ -14,7 +14,7 @@ app.include_router(books.router)
 def  on_startup():
     create_db_and_tables()
     
-    
+        
 @app.get('/check')
 def check():
     return {"data":"working"}

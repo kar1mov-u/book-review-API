@@ -1,8 +1,6 @@
 from sqlmodel import SQLModel,Field,Relationship
 from typing import Optional,List
-from pydantic import BaseModel
 from datetime import datetime
-from sqlalchemy import ForeignKey
 
 class UserBase(SQLModel):
     username: str=Field(nullable=False,unique=True)
@@ -75,13 +73,16 @@ class ReviewReturn(ReviewBase):
     user_id:int
     created_at:datetime
 
+class PaginatedComments(SQLModel):
+    comments:List[ReviewReturn]
+    next_cursor:Optional[int]
+
 class BookReturn(SQLModel):
     id: int
     title: str
     author: str
     published: int
     genres: list[GenreBase]
-    reviews:list[ReviewReturn]
     
     class Config:
         from_attributes = True
