@@ -5,7 +5,7 @@ from typing import Optional
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from ..database import SessionDep
-from ..models.sql_models import BookDB,BookCreate,GenreDB,BookReturn,GenreBase,ReviewBase, ReviewDB,ReviewReturn, PaginatedComments
+from ..models.sql_models import BookDB,BookCreate,GenreDB,BookReturn,GenreBase,ReviewBase, ReviewDB,ReviewReturn, PaginatedComments, AuthorDB
 from ..auth import get_current_user,is_admin
 
 router = APIRouter()
@@ -31,9 +31,16 @@ async def create_book(book_data:BookCreate, session: SessionDep, admin=Depends(i
 
     book=book_data.book
     genres = book_data.genres
-    print(book)
-    print(genres)
+    author = book_data.author
+    # print(book)
+    # print(genres)
     
+    #Checking if the author is present in the DB
+    author_db = session.exec(select(AuthorDB).where(AuthorDB.name==author)).first()
+    if not author_db:
+        raise HTTPException(status_code=402, detail="There is no such author, create it before adding book")
+    
+    #Craeting genre objects
     genre_objects = []
     for genre_name in genres:
         genre = session.exec(select(GenreDB).where(GenreDB.name==genre_name)).first()
@@ -43,7 +50,7 @@ async def create_book(book_data:BookCreate, session: SessionDep, admin=Depends(i
         genre_objects.append(genre)
     
     try:
-        new_book = BookDB(**book.model_dump(),genres=genre_objects)
+        new_book = BookDB(**book.model_dump(),genres=genre_objects,author=author_db)
         session.add(new_book)
         session.commit()
         session.refresh(new_book)
@@ -88,7 +95,7 @@ def commen_book(id:int, comment:ReviewBase, session: SessionDep,user=Depends(get
     return {"msg":"Success"}
     
 @router.get('/books/{id}/comments')
-def get_comments(id:int,session:SessionDep, cursor:Optional[int]=None, limit:int=10 ):
+def get_comments(id:int,session:SessionDep, cursor:Optional[int]=None, limit:int=10,user=Depends(get_current_user)):
     query = select(ReviewDB).where(ReviewDB.book_id==id)
     if cursor:
         query = query.where(ReviewDB.id>cursor)
@@ -107,4 +114,4 @@ def get_comments(id:int,session:SessionDep, cursor:Optional[int]=None, limit:int
         next_cursor=next_cursor
     )
     
-    return response
+    return response 

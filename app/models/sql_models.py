@@ -20,10 +20,18 @@ class UserLogin(SQLModel):
     #     {"unique_constraints":("username", "email")}
     # )
     
+        
+class AuthorBase(SQLModel):
+    name: str = Field(unique=True, nullable=False)
+    birth: int 
+    country: str
+    
+class AuthorDB(AuthorBase, table=True):
+    id : int | None = Field(default=None, primary_key=True)
+    books: List["BookDB"]= Relationship(back_populates='author')
     
 class BookBase(SQLModel):
     title: str = Field(unique=True)
-    author: str
     published: int
 
 class BookGenreLink(SQLModel, table=True):
@@ -34,7 +42,9 @@ class BookGenreLink(SQLModel, table=True):
 class BookDB(BookBase,table=True):
     id: int | None=Field(default=None, primary_key=True)
     rating: float=Field(default=0.0)
-    reviews: list['ReviewDB']= Relationship(back_populates="book")
+    author_id: int = Field(foreign_key='authordb.id')
+    author: Optional[AuthorDB] = Relationship(back_populates="books")
+    reviews: List['ReviewDB']= Relationship(back_populates="book")
     genres: List["GenreDB"] = Relationship(back_populates="books", link_model=BookGenreLink)
 
 
@@ -55,6 +65,7 @@ class GenreDB(SQLModel,table=True):
 
 class BookCreate(SQLModel):
     book:BookBase
+    author: str
     genres:List[str]
     
 class ReviewBase(SQLModel):
