@@ -42,6 +42,7 @@ class BookGenreLink(SQLModel, table=True):
 class BookDB(BookBase,table=True):
     id: int | None=Field(default=None, primary_key=True)
     rating: float=Field(default=0.0)
+    rated:int
     author_id: int = Field(foreign_key='authordb.id')
     author: Optional[AuthorDB] = Relationship(back_populates="books")
     reviews: List['ReviewDB']= Relationship(back_populates="book")
@@ -97,3 +98,6 @@ class BookReturn(SQLModel):
     
     class Config:
         from_attributes = True
+
+class Rate(SQLModel):
+    rate:int

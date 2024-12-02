@@ -5,7 +5,7 @@ from sqlmodel import select
 from sqlalchemy.exc import IntegrityError
 from ..auth import is_admin
 
-router = APIRouter()
+router = APIRouter(tags=['authors'])
 
 @router.get('/authors/get')
 def get_authors(session:SessionDep):

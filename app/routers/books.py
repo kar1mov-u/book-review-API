@@ -5,10 +5,10 @@ from typing import Optional
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from ..database import SessionDep
-from ..models.sql_models import BookDB,BookCreate,GenreDB,BookReturn,GenreBase,ReviewBase, ReviewDB,ReviewReturn, PaginatedComments, AuthorDB
+from ..models.sql_models import BookDB,BookCreate,GenreDB,BookReturn,GenreBase,ReviewBase, ReviewDB,ReviewReturn, PaginatedComments, AuthorDB,Rate
 from ..auth import get_current_user,is_admin
 
-router = APIRouter()
+router = APIRouter(tags=['books'])
 
 @router.get('/books')
 def get_books(session:SessionDep,author:Optional[str]=None, keyword:Optional[str]=None,top:Optional[bool]=Query(False) ):
@@ -117,3 +117,16 @@ def get_comments(id:int,session:SessionDep, cursor:Optional[int]=None, limit:int
     )
     
     return response 
+
+@router.post('/books/{id}/rate')
+def rate_book(id:int, rating:Rate, session:SessionDep, user = Depends(get_current_user)):
+    book = session.get(BookDB,id)
+    if not book:
+        raise HTTPException(status_code=404, detail="There is no such book")
+    book.rated+=1
+    book.rating = (book.rating * (book.rated - 1) + rating.rate) / book.rated 
+    session.add(book)
+    session.commit(book)
+    session.refresh(book)
+    return book.rating
+    
