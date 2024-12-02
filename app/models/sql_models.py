@@ -91,7 +91,7 @@ class PaginatedComments(SQLModel):
 class BookReturn(SQLModel):
     id: int
     title: str
-    author: str
+    author: AuthorBase
     published: int
     genres: list[GenreBase]
     

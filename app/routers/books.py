@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException,Depends
-from sqlmodel import select,asc
+from fastapi import APIRouter, HTTPException,Depends,Query
+from sqlmodel import select,asc,desc
 from typing import Optional
 # from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
@@ -11,17 +11,19 @@ from ..auth import get_current_user,is_admin
 router = APIRouter()
 
 @router.get('/books')
-def get_books(session:SessionDep):
-    books = session.exec(select(BookDB)).all()
+def get_books(session:SessionDep,author:Optional[str]=None, keyword:Optional[str]=None,top:Optional[bool]=Query(False) ):
+    
+    query =select(BookDB).join(AuthorDB)
+    if author:
+        query = query.where(AuthorDB.name.ilike(f"%{author}%"))
+    if top:
+        query = query.order_by(desc(BookDB.rating)) 
+    if keyword:
+        query = query.where(BookDB.title.ilike(f"%{keyword}%"))
+    
+    
+    books = session.exec(query).all()
 
-    # return_objects = []
-    # for book in books:
-    #         b= BookReturn(id=book.id,
-    #                       title=book.title,
-    #                       author=book.author,
-    #                       published=book.published,
-    #                       genres=[GenreBase(name=genre.name, id=genre.id) for genre in book.genres] )
-    #         return_objects.append(b)
     return books
 
 
