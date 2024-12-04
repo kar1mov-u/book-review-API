@@ -33,6 +33,7 @@ class AuthorDB(AuthorBase, table=True):
 class BookBase(SQLModel):
     title: str = Field(unique=True)
     published: int
+    description: str
 
 class BookGenreLink(SQLModel, table=True):
     book_id: Optional[int]=Field(foreign_key="bookdb.id",primary_key=True)
@@ -42,7 +43,7 @@ class BookGenreLink(SQLModel, table=True):
 class BookDB(BookBase,table=True):
     id: int | None=Field(default=None, primary_key=True)
     rating: float=Field(default=0.0)
-    rated:int
+    rated:int=Field(default=0)
     author_id: int = Field(foreign_key='authordb.id')
     author: Optional[AuthorDB] = Relationship(back_populates="books")
     reviews: List['ReviewDB']= Relationship(back_populates="book")
@@ -95,9 +96,25 @@ class BookReturn(SQLModel):
     author: AuthorBase
     published: int
     genres: list[GenreBase]
+    rating:float
+    rated:int
     
     class Config:
         from_attributes = True
 
 class Rate(SQLModel):
     rate:int
+    
+class Activity(SQLModel, table=True):
+    id :int =Field(default=None, primary_key=True)
+    user_id: int=Field(foreign_key="userdb.id")
+    book_id: str
+    detail : str
+    activity_type: str
+    time: datetime=Field(default_factory=datetime.utcnow)
+    
+class ActivityReturn(SQLModel):
+    id: int
+    book_name:str
+    detail:str
+    

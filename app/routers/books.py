@@ -5,7 +5,7 @@ from typing import Optional
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from ..database import SessionDep
-from ..models.sql_models import BookDB,BookCreate,GenreDB,BookReturn,GenreBase,ReviewBase, ReviewDB,ReviewReturn, PaginatedComments, AuthorDB,Rate
+from ..models.sql_models import BookDB,BookCreate,GenreDB,BookReturn,GenreBase,ReviewBase, ReviewDB,ReviewReturn, PaginatedComments, AuthorDB,Rate, Activity
 from ..auth import get_current_user,is_admin
 
 router = APIRouter(tags=['books'])
@@ -56,9 +56,9 @@ async def create_book(book_data:BookCreate, session: SessionDep, admin=Depends(i
         session.add(new_book)
         session.commit()
         session.refresh(new_book)
-    except IntegrityError:
+    except IntegrityError as e:
         session.rollback()
-        raise HTTPException(status_code=401,detail="The book is already in use")
+        raise HTTPException(status_code=402,detail=f"{e}")
     return new_book
 
 
@@ -81,6 +81,8 @@ def get_book(id:int,session:SessionDep):
         title=book.title,
         author=book.author,
         published=book.published,
+        rating=book.rating,
+        rated=book.rated,
         genres=[GenreBase(id=genre.id, name=genre.name) for genre in book.genres],
 )
 
@@ -93,6 +95,9 @@ def commen_book(id:int, comment:ReviewBase, session: SessionDep,user=Depends(get
         raise HTTPException(status_code=402,detail="There is no such book")
     comment_db = ReviewDB(**data, book_id=id,user_id=user.id)
     session.add(comment_db)
+    
+    act = Activity(user_id=user.id, book_id=book.title, detail=comment.message, activity_type="comment")
+    session.add(act)
     session.commit()
     return {"msg":"Success"}
     
@@ -126,7 +131,9 @@ def rate_book(id:int, rating:Rate, session:SessionDep, user = Depends(get_curren
     book.rated+=1
     book.rating = (book.rating * (book.rated - 1) + rating.rate) / book.rated 
     session.add(book)
-    session.commit(book)
+    act = Activity(user_id=user.id, book_id=book.title, detail=rating.rate, activity_type="rate")
+    session.add(act)
+    session.commit()
     session.refresh(book)
     return book.rating
     

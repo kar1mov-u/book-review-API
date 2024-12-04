@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException,Depends
 from sqlmodel import select
 from sqlalchemy.exc import IntegrityError
 from ..database import SessionDep
-from ..models.sql_models import UserDB,UserBase
+from ..models.sql_models import UserDB,UserBase, Activity,ActivityReturn
 from ..utils import hashing_pass,verify_pass
 from ..auth import craete_access_token,get_current_user
 from fastapi.security import OAuth2PasswordRequestForm
@@ -44,4 +44,19 @@ def login(session:SessionDep, user_data:OAuth2PasswordRequestForm=Depends()):
 @router.get('/users/me')
 def get_my_user(user:UserDB=Depends(get_current_user)):
     return user
+
+@router.get('/users/activity')
+def get_activity(session:SessionDep, user=Depends(get_current_user)):
+    acts = session.exec(select(Activity).where(Activity.user_id==user.id)).all()
+    comms,reviews = [],[]
+    for act in acts:
+        a=ActivityReturn(id=act.id, book_name=act.book_id, detail=act.detail)
+        
+        if act.activity_type=="comment":
+            comms.append(a)
+        else:
+            reviews.append(a)
+    return {"comments":comms, "reviews":reviews}
+            
+        
 
